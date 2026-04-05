@@ -1,0 +1,66 @@
+[
+  {
+    "id": "1",
+    "title": "The Age of Surveillance Capitalism",
+    "author": "Shoshana Zuboff",
+    "year": "2019",
+    "type": "Libro",
+    "description": "The challenges to humanity posed by the digital future, the first detailed examination of the unprecedented form of power called \"surveillance capitalism,\" and the quest by powerful corporations to predict and control our behavior.",
+    "img": "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=400",
+    "date": "2024-03-26"
+  },
+  {
+    "id": "2",
+    "title": "Artificial Intelligence: A Modern Approach",
+    "author": "Stuart Russell",
+    "year": "2020",
+    "type": "Libro",
+    "img": "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=400",
+    "date": "2024-03-27"
+  },
+  {
+    "id": "3",
+    "title": "Attention Is All You Need",
+    "author": "Vaswani et al.",
+    "year": "2017",
+    "type": "Paper",
+    "img": "https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&q=80&w=400",
+    "date": "2024-03-24"
+  },
+  {
+    "id": "4",
+    "title": "Thinking, Fast and Slow",
+    "author": "Daniel Kahneman",
+    "year": "2011",
+    "type": "Libro",
+    "img": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400",
+    "date": "2024-03-23"
+  },
+  {
+    "id": "5",
+    "title": "Deep Learning",
+    "author": "Ian Goodfellow",
+    "year": "2016",
+    "type": "Libro",
+    "img": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=400",
+    "date": "2024-03-22"
+  },
+  {
+    "id": "6",
+    "title": "The Alignment Problem",
+    "author": "Brian Christian",
+    "year": "2020",
+    "type": "Libro",
+    "img": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=400",
+    "date": "2024-03-21"
+  },
+  {
+    "id": "7",
+    "title": "Language Models are Few-Shot Learners",
+    "author": "Brown et al.",
+    "year": "2020",
+    "type": "Paper",
+    "img": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=400",
+    "date": "2024-03-20"
+  }
+]

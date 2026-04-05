@@ -1,0 +1,38 @@
+[
+  {
+    "id": "1",
+    "title": "Síntesis Académica",
+    "category": "Análisis",
+    "model": "GPT-4 / Claude 3",
+    "description": "Genera un resumen estructurado de un paper científico destacando metodología, resultados clave y limitaciones.",
+    "code": "Actúa como un investigador senior. Analiza el siguiente texto y extrae:\n1. Pregunta de investigación principal\n2. Metodología utilizada (con nivel de detalle)\n3. Hallazgos más significativos (bullet points)\n4. Limitaciones declaradas por los autores\n5. Implicaciones para futuras investigaciones.\n\nTexto: [INSERTAR TEXTO]",
+    "icon": "FileText"
+  },
+  {
+    "id": "2",
+    "title": "Refactorización de Código",
+    "category": "Desarrollo",
+    "model": "Claude 3.5 Sonnet",
+    "description": "Optimiza funciones complejas aplicando principios SOLID y mejorando la legibilidad sin alterar la lógica de negocio.",
+    "code": "Revisa el siguiente bloque de código. Tu tarea es:\n- Identificar code smells o antipatrones.\n- Refactorizar aplicando principios SOLID.\n- Añadir comentarios JSDoc/Docstrings claros.\n- Mantener exactamente la misma funcionalidad.\n- Explicar brevemente los cambios realizados.\n\nCódigo:\n```[LENGUAJE]\n[INSERTAR CÓDIGO]\n```",
+    "icon": "Code2"
+  },
+  {
+    "id": "3",
+    "title": "Generación de Ideas (Brainstorming)",
+    "category": "Creatividad",
+    "model": "Gemini 1.5 Pro",
+    "description": "Técnica de \"Seis Sombreros para Pensar\" aplicada a la resolución de problemas de producto.",
+    "code": "Adopta la técnica de los \"Seis Sombreros para Pensar\" de Edward de Bono. Analiza el siguiente problema desde cada una de las 6 perspectivas (Blanco, Rojo, Negro, Amarillo, Verde, Azul). Para cada sombrero, proporciona 3 puntos clave o ideas concretas.\n\nProblema a resolver: [DESCRIPCIÓN DEL PROBLEMA]",
+    "icon": "Sparkles"
+  },
+  {
+    "id": "4",
+    "title": "Traducción Contextual",
+    "category": "Redacción",
+    "model": "Cualquier Modelo",
+    "description": "Traducción de textos técnicos manteniendo el tono y la terminología específica del dominio.",
+    "code": "Traduce el siguiente texto del [IDIOMA ORIGEN] al [IDIOMA DESTINO]. \nContexto: Es un artículo técnico sobre [TEMA/DOMINIO].\nTono: Profesional, académico pero accesible.\nInstrucciones especiales: Mantén los términos técnicos estándar en su idioma original si no hay una traducción ampliamente aceptada. Asegúrate de que la fluidez sea natural para un hablante nativo del idioma destino.\n\nTexto: [INSERTAR TEXTO]",
+    "icon": "MessageSquare"
+  }
+]
