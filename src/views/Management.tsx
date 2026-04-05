@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, CheckCircle2, RefreshCw, BarChart2, FileText, Link as LinkIcon, Calendar, Terminal, BookOpen, X, Pencil, Image as ImageIcon } from 'lucide-react';
+import { Upload, CheckCircle2, RefreshCw, BarChart2, FileText, Terminal, BookOpen, X, Pencil, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import * as bookService from '../lib/bookService';
 import * as promptService from '../lib/promptService';
@@ -25,11 +25,11 @@ export function Management() {
     try {
       const books = await bookService.getBooks();
       libraryItems = books.map((i) => ({ ...i, sysType: 'Biblioteca' }));
-    } catch { /* API not running */ }
+    } catch { /* JSON seed unavailable */ }
     try {
       const prompts = await promptService.getPrompts();
       promptItems = prompts.map((i) => ({ ...i, sysType: 'Prompt' }));
-    } catch { /* API not running */ }
+    } catch { /* JSON seed unavailable */ }
     // NotebookLM still from localStorage
     const notebook = JSON.parse(localStorage.getItem('notebook_library') || '[]').map((i:any) => ({...i, sysType: 'NotebookLM'}));
     const delNot = JSON.parse(localStorage.getItem('deleted_notebook_items') || '[]');
@@ -49,7 +49,7 @@ export function Management() {
           icon: 'Terminal',
         });
       } catch {
-        return alert('Error: el servidor API no está activo. Ejecuta "npm run server" en otra terminal.');
+        return alert('Error al guardar prompts desde la base local.');
       }
     } else {
       if (!formData.title) return alert('Falta el Título');
@@ -65,7 +65,7 @@ export function Management() {
             img: coverImage ? URL.createObjectURL(coverImage) : 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80',
           });
         } catch {
-          return alert('Error: el servidor API no está activo. Ejecuta "npm run server" en otra terminal.');
+          return alert('Error al guardar en la base local.');
         }
       } else {
         const nb = { id: `UI-${Date.now().toString().slice(-3)}`, title: formData.title, desc: formData.description || `Autor: ${formData.author}` };
@@ -82,10 +82,10 @@ export function Management() {
     if (!window.confirm(`¿Eliminar "${item.title}"?`)) return;
     if (item.sysType === 'Biblioteca') {
       try { await bookService.deleteBook(item.id); }
-      catch { return alert('Error: el servidor API no está activo.'); }
+      catch { return alert('Error al eliminar de la base local.'); }
     } else if (item.sysType === 'Prompt') {
       try { await promptService.deletePrompt(item.id); }
-      catch { return alert('Error: el servidor API no está activo.'); }
+      catch { return alert('Error al eliminar de la base local.'); }
     } else {
       const key = 'deleted_notebook_items';
       localStorage.setItem(key, JSON.stringify([...JSON.parse(localStorage.getItem(key) || '[]'), item.id]));
@@ -97,10 +97,10 @@ export function Management() {
     if (!newTitle.trim()) return;
     if (item.sysType === 'Biblioteca') {
       try { await bookService.updateBook(item.id, { title: newTitle.trim() }); }
-      catch { return alert('Error: el servidor API no está activo.'); }
+      catch { return alert('Error al actualizar la base local.'); }
     } else if (item.sysType === 'Prompt') {
       try { await promptService.updatePrompt(item.id, { title: newTitle.trim() }); }
-      catch { return alert('Error: el servidor API no está activo.'); }
+      catch { return alert('Error al actualizar la base local.'); }
     } else {
       const lib = JSON.parse(localStorage.getItem('notebook_library') || '[]');
       const idx = lib.findIndex((i: any) => i.id === item.id);
