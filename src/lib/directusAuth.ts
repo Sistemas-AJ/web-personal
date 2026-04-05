@@ -1,4 +1,4 @@
-const DIRECTUS_ORIGIN = 'https://noticiasback.systempiura.com';
+export const DIRECTUS_ORIGIN = 'https://noticiasback.systempiura.com';
 const DIRECTUS_AUTH_URL = `${DIRECTUS_ORIGIN}/auth/login`;
 const STORAGE_KEY = 'directus_admin_auth';
 
@@ -53,6 +53,10 @@ export function getStoredDirectusAuth(): DirectusAuthData | null {
 
 export function hasStoredDirectusAuth(): boolean {
   return Boolean(getStoredDirectusAuth()?.access_token);
+}
+
+export function getDirectusAccessToken(): string | null {
+  return getStoredDirectusAuth()?.access_token || null;
 }
 
 export function clearStoredDirectusAuth() {

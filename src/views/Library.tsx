@@ -33,7 +33,7 @@ export function Library() {
     if (item.fileUrl) {
       const a = document.createElement('a');
       a.href = item.fileUrl;
-      a.download = item.fileName || `${item.title}.pdf`;
+      a.download = `${item.title}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

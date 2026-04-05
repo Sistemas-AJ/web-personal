@@ -1,3 +1,5 @@
+import { DIRECTUS_ORIGIN, getDirectusAccessToken } from './directusAuth';
+
 export interface Book {
   id: string;
   title: string;
@@ -7,11 +9,42 @@ export interface Book {
   description?: string;
   img: string;
   date: string;
+  publicationDate?: string;
   fileUrl?: string;
-  fileName?: string;
+  coverId?: string | null;
+  fileId?: string | null;
 }
 
-const STORAGE_KEY = 'database_library';
+interface DirectusItemsResponse<T> {
+  data: T;
+  errors?: Array<{ message?: string }>;
+}
+
+export interface DirectusBookPayload {
+  titulo: string;
+  autor: string;
+  year: string;
+  tipo: string;
+  descripcion: string;
+  fecha_publicada?: string;
+  portada?: string | null;
+  archivo?: string | null;
+}
+
+interface DirectusBookRecord {
+  id: string | number;
+  titulo?: string;
+  autor?: string;
+  year?: string;
+  tipo?: string;
+  descripcion?: string;
+  fecha_publicada?: string;
+  portada?: string | { id?: string };
+  archivo?: string | { id?: string };
+}
+
+const DIRECTUS_ITEMS_URL = `${DIRECTUS_ORIGIN}/items/ajbiblioteca`;
+const DIRECTUS_FILES_URL = `${DIRECTUS_ORIGIN}/files`;
 const libraryUrl = new URL('../../database/library.json', import.meta.url).href;
 
 function clone<T>(value: T): T {
@@ -26,57 +59,128 @@ async function loadSeedBooks(): Promise<Book[]> {
   return res.json();
 }
 
-async function readBooks(): Promise<Book[]> {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    return JSON.parse(stored) as Book[];
-  }
+function normalizeBook(item: DirectusBookRecord): Book {
+  const coverId = typeof item.portada === 'string' ? item.portada : item.portada?.id;
+  const fileId = typeof item.archivo === 'string' ? item.archivo : item.archivo?.id;
 
-  const seedData = await loadSeedBooks();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(seedData));
-  return clone(seedData);
+  return {
+    id: String(item.id),
+    title: item.titulo || '',
+    author: item.autor || '',
+    year: item.year || '',
+    type: item.tipo || 'General',
+    description: item.descripcion || '',
+    img: coverId ? `${DIRECTUS_ORIGIN}/assets/${coverId}` : '',
+    date: item.fecha_publicada || '',
+    publicationDate: item.fecha_publicada,
+    fileUrl: fileId ? `${DIRECTUS_ORIGIN}/assets/${fileId}` : undefined,
+    coverId: coverId || null,
+    fileId: fileId || null,
+  };
 }
 
-function writeBooks(data: Book[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+async function requestDirectus<T>(
+  input: string,
+  init?: RequestInit,
+  requireAuth = false
+): Promise<T> {
+  const token = getDirectusAccessToken();
+  if (requireAuth && !token) {
+    throw new Error('Tu sesión de administrador no es válida. Inicia sesión nuevamente.');
+  }
+
+  const response = await fetch(input, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers || {}),
+    },
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as DirectusItemsResponse<T>;
+  if (!response.ok) {
+    const message = payload.errors?.[0]?.message || 'Error al conectar con Directus.';
+    throw new Error(message);
+  }
+
+  return payload.data;
 }
 
 export const getBooks = async (): Promise<Book[]> => {
-  const books = await readBooks();
-  return clone(books);
-};
-
-export const addBook = async (data: Omit<Book, 'id' | 'date'>): Promise<Book> => {
-  const books = await readBooks();
-  const book: Book = {
-    id: Date.now().toString(),
-    date: new Date().toISOString().split('T')[0],
-    img: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400',
-    ...data,
-  };
-  const nextBooks = [book, ...books];
-  writeBooks(nextBooks);
-  return clone(book);
-};
-
-export const updateBook = async (id: string, data: Partial<Book>): Promise<Book> => {
-  const books = await readBooks();
-  const idx = books.findIndex((book) => book.id === id);
-  if (idx === -1) {
-    throw new Error('Libro no encontrado');
+  try {
+    const books = await requestDirectus<DirectusBookRecord[]>(DIRECTUS_ITEMS_URL);
+    return books.map(normalizeBook);
+  } catch {
+    const seedData = await loadSeedBooks();
+    return clone(seedData);
   }
-  books[idx] = { ...books[idx], ...data };
-  writeBooks(books);
-  return clone(books[idx]);
 };
 
-export const deleteBook = async (id: string): Promise<Book> => {
-  const books = await readBooks();
-  const idx = books.findIndex((book) => book.id === id);
-  if (idx === -1) {
-    throw new Error('Libro no encontrado');
-  }
-  const [deleted] = books.splice(idx, 1);
-  writeBooks(books);
-  return clone(deleted);
+export const addBook = async (data: DirectusBookPayload): Promise<Book> => {
+  const created = await requestDirectus<DirectusBookRecord>(
+    DIRECTUS_ITEMS_URL,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+    true
+  );
+  return normalizeBook(created);
 };
+
+export const updateBook = async (id: string, data: Partial<DirectusBookPayload>): Promise<Book> => {
+  const updated = await requestDirectus<DirectusBookRecord>(
+    `${DIRECTUS_ITEMS_URL}/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    },
+    true
+  );
+  return normalizeBook(updated);
+};
+
+export const deleteBook = async (id: string): Promise<void> => {
+  await requestDirectus<DirectusBookRecord | null>(
+    `${DIRECTUS_ITEMS_URL}/${id}`,
+    {
+      method: 'DELETE',
+    },
+    true
+  );
+};
+
+export async function uploadDirectusFile(file: File): Promise<string> {
+  const token = getDirectusAccessToken();
+  if (!token) {
+    throw new Error('Tu sesión de administrador no es válida. Inicia sesión nuevamente.');
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(DIRECTUS_FILES_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as DirectusItemsResponse<
+    { id?: string } | Array<{ id?: string }>
+  >;
+
+  if (!response.ok) {
+    const message = payload.errors?.[0]?.message || 'No se pudo subir el archivo a Directus.';
+    throw new Error(message);
+  }
+
+  const fileData = Array.isArray(payload.data) ? payload.data[0] : payload.data;
+  if (!fileData?.id) {
+    throw new Error('Directus no devolvió el ID del archivo subido.');
+  }
+
+  return fileData.id;
+}
