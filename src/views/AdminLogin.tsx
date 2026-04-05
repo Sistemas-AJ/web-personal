@@ -1,30 +1,36 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Lock, Eye, EyeOff, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Lock, Eye, EyeOff, ShieldCheck, ArrowLeft, Mail, Loader2 } from 'lucide-react';
+import { loginToDirectus } from '../lib/directusAuth';
 
 interface AdminLoginProps {
   onSuccess: () => void;
   onBack: () => void;
 }
 
-const ADMIN_PASSWORD = 'admin2025';
-
 export function AdminLogin({ onSuccess, onBack }: AdminLoginProps) {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [shaking, setShaking] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
+    setSubmitting(true);
+    try {
+      await loginToDirectus(email.trim(), password);
       setError('');
       onSuccess();
-    } else {
-      setError('Contraseña incorrecta. Inténtalo de nuevo.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'No se pudo iniciar sesión.';
+      setError(message);
       setShaking(true);
       setTimeout(() => setShaking(false), 500);
       setPassword('');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -60,9 +66,26 @@ export function AdminLogin({ onSuccess, onBack }: AdminLoginProps) {
           </div>
 
           <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white text-center mb-1">Panel de Administración</h1>
-          <p className="text-slate-500 text-sm text-center mb-8">Acceso restringido. Ingresa tu contraseña.</p>
+          <p className="text-slate-500 text-sm text-center mb-8">Acceso restringido. Autentícate con tu usuario de Directus.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest font-mono">
+                Correo
+              </label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setError(''); }}
+                  placeholder="usuario@dominio.com"
+                  autoFocus
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest font-mono">
                 Contraseña
@@ -74,7 +97,6 @@ export function AdminLogin({ onSuccess, onBack }: AdminLoginProps) {
                   value={password}
                   onChange={e => { setPassword(e.target.value); setError(''); }}
                   placeholder="••••••••"
-                  autoFocus
                   className="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
                 <button
@@ -98,10 +120,11 @@ export function AdminLogin({ onSuccess, onBack }: AdminLoginProps) {
 
             <button
               type="submit"
-              className="w-full bg-brand-blue hover:bg-blue-700 text-white py-3 rounded-xl font-medium transition-all shadow-lg shadow-blue-900/10 dark:shadow-blue-900/30 flex items-center justify-center gap-2 mt-2"
+              disabled={submitting || !email.trim() || !password}
+              className="w-full bg-brand-blue hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white py-3 rounded-xl font-medium transition-all shadow-lg shadow-blue-900/10 dark:shadow-blue-900/30 flex items-center justify-center gap-2 mt-2"
             >
-              <Lock size={16} />
-              Ingresar al panel
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
+              {submitting ? 'Validando acceso...' : 'Ingresar al panel'}
             </button>
           </form>
         </div>

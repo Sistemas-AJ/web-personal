@@ -7,6 +7,7 @@ import { Prompts } from './views/Prompts';
 import { NotebookGuide } from './views/NotebookGuide';
 import { AdminLogin } from './views/AdminLogin';
 import { AdminLayout } from './layouts/AdminLayout';
+import { clearStoredDirectusAuth, hasStoredDirectusAuth } from './lib/directusAuth';
 
 type Zone = 'public' | 'admin-login' | 'admin';
 
@@ -42,7 +43,10 @@ function App() {
   // Admin panel
   if (zone === 'admin') {
     return (
-      <AdminLayout onExit={() => { setZone('public'); }} />
+      <AdminLayout onExit={() => {
+        clearStoredDirectusAuth();
+        setZone('public');
+      }} />
     );
   }
 
@@ -52,7 +56,7 @@ function App() {
       <Sidebar
         currentView={currentView}
         setCurrentView={setCurrentView}
-        onAdminAccess={() => setZone('admin-login')}
+        onAdminAccess={() => setZone(hasStoredDirectusAuth() ? 'admin' : 'admin-login')}
       />
       <div className="flex-grow ml-72 flex flex-col min-h-screen">
         <Header />

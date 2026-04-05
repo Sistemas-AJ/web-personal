@@ -352,7 +352,18 @@ export function Management() {
               <button 
                 type="button" 
                 onClick={() => {
-                  setFormData({ type: 'Libro / Monografía', category: 'Inteligencia Artificial', title: '', author: '', year: '', url: '', destination: 'library' });
+                  setFormData({
+                    type: 'Libro / Monografía',
+                    category: 'Inteligencia Artificial',
+                    title: '',
+                    author: '',
+                    year: '',
+                    url: '',
+                    model: '',
+                    description: '',
+                    code: '',
+                    destination: 'library',
+                  });
                   setFile(null);
                   setCoverImage(null);
                 }}
