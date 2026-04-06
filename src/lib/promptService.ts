@@ -1,3 +1,5 @@
+import { DIRECTUS_ORIGIN, getDirectusAccessToken } from './directusAuth';
+
 export interface Prompt {
   id: string;
   title: string;
@@ -8,7 +10,29 @@ export interface Prompt {
   icon: string;
 }
 
-const STORAGE_KEY = 'database_prompts';
+interface DirectusItemsResponse<T> {
+  data: T;
+  errors?: Array<{ message?: string }>;
+}
+
+export interface DirectusPromptPayload {
+  titulo: string;
+  categoria: string;
+  modelo: string;
+  Descripcion: string;
+  promp: string;
+}
+
+interface DirectusPromptRecord {
+  id: string | number;
+  titulo?: string;
+  categoria?: string;
+  modelo?: string;
+  Descripcion?: string;
+  promp?: string;
+}
+
+const DIRECTUS_ITEMS_URL = `${DIRECTUS_ORIGIN}/items/prompts`;
 const promptsUrl = new URL('../../database/prompts.json', import.meta.url).href;
 
 function clone<T>(value: T): T {
@@ -23,56 +47,86 @@ async function loadSeedPrompts(): Promise<Prompt[]> {
   return res.json();
 }
 
-async function readPrompts(): Promise<Prompt[]> {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    return JSON.parse(stored) as Prompt[];
-  }
-
-  const seedData = await loadSeedPrompts();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(seedData));
-  return clone(seedData);
+function normalizePrompt(item: DirectusPromptRecord): Prompt {
+  return {
+    id: String(item.id),
+    title: item.titulo || '',
+    category: item.categoria || '',
+    model: item.modelo || '',
+    description: item.Descripcion || '',
+    code: item.promp || '',
+    icon: 'Terminal',
+  };
 }
 
-function writePrompts(data: Prompt[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+async function requestDirectus<T>(
+  input: string,
+  init?: RequestInit,
+  requireAuth = false
+): Promise<T> {
+  const token = getDirectusAccessToken();
+  if (requireAuth && !token) {
+    throw new Error('Tu sesión de administrador no es válida. Inicia sesión nuevamente.');
+  }
+
+  const response = await fetch(input, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers || {}),
+    },
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as DirectusItemsResponse<T>;
+  if (!response.ok) {
+    const message = payload.errors?.[0]?.message || 'Error al conectar con Directus.';
+    throw new Error(message);
+  }
+
+  return payload.data;
 }
 
 export const getPrompts = async (): Promise<Prompt[]> => {
-  const prompts = await readPrompts();
-  return clone(prompts);
-};
-
-export const addPrompt = async (data: Omit<Prompt, 'id'>): Promise<Prompt> => {
-  const prompts = await readPrompts();
-  const prompt: Prompt = {
-    id: Date.now().toString(),
-    icon: 'Terminal',
-    ...data,
-  };
-  const nextPrompts = [prompt, ...prompts];
-  writePrompts(nextPrompts);
-  return clone(prompt);
-};
-
-export const updatePrompt = async (id: string, data: Partial<Prompt>): Promise<Prompt> => {
-  const prompts = await readPrompts();
-  const idx = prompts.findIndex((prompt) => prompt.id === id);
-  if (idx === -1) {
-    throw new Error('Prompt no encontrado');
+  try {
+    const prompts = await requestDirectus<DirectusPromptRecord[]>(DIRECTUS_ITEMS_URL);
+    return prompts.map(normalizePrompt);
+  } catch {
+    const seedData = await loadSeedPrompts();
+    return clone(seedData);
   }
-  prompts[idx] = { ...prompts[idx], ...data };
-  writePrompts(prompts);
-  return clone(prompts[idx]);
 };
 
-export const deletePrompt = async (id: string): Promise<Prompt> => {
-  const prompts = await readPrompts();
-  const idx = prompts.findIndex((prompt) => prompt.id === id);
-  if (idx === -1) {
-    throw new Error('Prompt no encontrado');
-  }
-  const [deleted] = prompts.splice(idx, 1);
-  writePrompts(prompts);
-  return clone(deleted);
+export const addPrompt = async (data: DirectusPromptPayload): Promise<Prompt> => {
+  const created = await requestDirectus<DirectusPromptRecord>(
+    DIRECTUS_ITEMS_URL,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+    true
+  );
+  return normalizePrompt(created);
+};
+
+export const updatePrompt = async (id: string, data: Partial<DirectusPromptPayload>): Promise<Prompt> => {
+  const updated = await requestDirectus<DirectusPromptRecord>(
+    `${DIRECTUS_ITEMS_URL}/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    },
+    true
+  );
+  return normalizePrompt(updated);
+};
+
+export const deletePrompt = async (id: string): Promise<void> => {
+  await requestDirectus<DirectusPromptRecord | null>(
+    `${DIRECTUS_ITEMS_URL}/${id}`,
+    {
+      method: 'DELETE',
+    },
+    true
+  );
 };
